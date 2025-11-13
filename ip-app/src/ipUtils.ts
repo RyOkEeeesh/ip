@@ -19,7 +19,13 @@ export function maskFromLen(len: number): number {
 export function lenFromMask(mask: number): number | null {
   const inverted = ~mask >>> 0;
   if ((inverted & (inverted + 1)) !== 0) return null;
-  return 32 - Math.clz32(mask);
+
+  let len = 0;
+  for (let i = 31; i >= 0; i--) {
+    if ((mask & (1 << i)) !== 0) len++;
+    else break;
+  }
+  return len;
 }
 
 export function network(ip: number, mask: number): number {
