@@ -1,5 +1,5 @@
-import { useState } from "react";
-import "./App.css";
+import { useState } from 'react';
+import './App.css';
 
 function isIpv4(ip: string) {
   const regex =
@@ -10,14 +10,14 @@ function isIpv4(ip: string) {
 // ipv4 -> int
 function ipv4ToInt(ip: string): number {
   return ip
-    .split(".")
+    .split('.')
     .reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0);
 }
 
 // int -> ipv4
 // 1つのIPアドレスをドット区切りで表記する機能を実装すること
 // サブネットマスクも同様
-function intToIpc4(ip: number): string {
+function intToIpv4(ip: number): string {
   return `${(ip >> 24) & 0xff}.${(ip >> 16) & 0xff}.${(ip >> 8) & 0xff}.${ip & 0xff}`;
 }
 
@@ -27,7 +27,7 @@ function maskFromLen(len: number): number {
 }
 
 // subnetMask -> /N
-function LenFromMask(mask: number): number | null {
+function lenFromMask(mask: number): number | null {
   const inverted = ~mask >>> 0;
   if ((inverted & (inverted + 1)) !== 0) return null;
 
@@ -46,7 +46,7 @@ function network(ip: number, mask: number): number {
 
 type InputProps = {
   labelTitle: string;
-  ip: string;
+  ip: number | null;
   setIp: React.Dispatch<React.SetStateAction<number | null>>;
   placeholder: string;
   children?: React.ReactNode;
@@ -55,7 +55,7 @@ type InputProps = {
 function InputIp({ labelTitle, ip, setIp, placeholder, children }: InputProps) {
   function handleInput(e: React.ChangeEvent<HTMLInputElement>) {
     const ip = e.target.value;
-    isIpv4(ip) ? setIp(ipv4ToInt(ip)) : setIp(null);
+    setIp(isIpv4(ip) ? ipv4ToInt(ip) : null);
   }
 
   return (
@@ -66,9 +66,10 @@ function InputIp({ labelTitle, ip, setIp, placeholder, children }: InputProps) {
           type="text"
           name={labelTitle}
           id={labelTitle}
-          value={ip}
+          value={ip ? intToIpv4(ip) : ''}
           placeholder={placeholder}
           onChange={handleInput}
+          maxLength={15}
         />
       </div>
       {children}
@@ -77,27 +78,94 @@ function InputIp({ labelTitle, ip, setIp, placeholder, children }: InputProps) {
 }
 
 type InputMaskProps = {
-  mask: number;
-  setMask: React.Dispatch<React.SetStateAction<number>>;
+  mask: number | null;
+  setMask: React.Dispatch<React.SetStateAction<number | null>>;
+};
+
+function InputMask({ mask, setMask }: InputMaskProps) {
+  function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const len = Number(e.target.value);
+    setMask(len === -1 ? null : maskFromLen(len));
+  }
+  const len = mask && lenFromMask(mask);
+  return (
+    <InputIp
+      labelTitle="subnet mask"
+      ip={mask}
+      setIp={setMask}
+      placeholder="255.255.255.0"
+    >
+      <div className="">
+        <label htmlFor="maskLen"></label>
+        <select name="maskLen" id="maskLen" onChange={handleChange}>
+          <option value={-1}> / </option>
+          {Array.from({ length: 33 }).map((_, i) => (
+            <option key={`option-${i}`} value={i} selected={len === i}>
+              /{i}
+            </option>
+          ))}
+        </select>
+      </div>
+    </InputIp>
+  );
 }
 
-function InputMask() {}
+type MutualCommunicationInputBoxProps = {
+  ip: number | null;
+  setIp: React.Dispatch<React.SetStateAction<number | null>>;
+  mask: number | null;
+  setMask: React.Dispatch<React.SetStateAction<number | null>>;
+};
 
-
+function MutualCommunicationInputBox({
+  ip,
+  setIp,
+  mask,
+  setMask,
+}: MutualCommunicationInputBoxProps) {
+  return (
+    <div className="">
+      <InputIp
+        labelTitle="ip address"
+        ip={ip}
+        setIp={setIp}
+        placeholder="192.168.0.1"
+      />
+      <InputMask mask={mask} setMask={setMask} />
+    </div>
+  );
+}
 
 function MutualCommunication() {
   // IPアドレスを1つのINT型変数に入れる
-  const [ip, setIp] = useState<number | null>(null);
+  const [ip1, setIp1] = useState<number | null>(null);
+  const [ip2, setIp2] = useState<number | null>(null);
   // サブネットマスクも同様
-  const [mask, setMask] = useState<number>(24);
+  const [mask1, setMask1] = useState<number | null>(null);
+  const [mask2, setMask2] = useState<number | null>(null);
+
+  return (
+    <div className="">
+      <MutualCommunicationInputBox
+        ip={ip1}
+        setIp={setIp1}
+        mask={mask1}
+        setMask={setMask1}
+      />
+      <MutualCommunicationInputBox
+        ip={ip2}
+        setIp={setIp2}
+        mask={mask2}
+        setMask={setMask2}
+      />
+    </div>
+  );
 }
 
 export default function App() {
   return (
     <>
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-r from-indigo-500 to-pink-500 text-4xl font-bold text-white">
-        Tailwind v4 Working! 🚀
-      </div>
+      <MutualCommunication />
     </>
   );
 }

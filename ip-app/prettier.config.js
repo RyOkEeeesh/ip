@@ -1,5 +1,3 @@
-// prettier.config.js
-
 /**
  * @see https://prettier.io/docs/configuration
  * @type {import("prettier").Config}
