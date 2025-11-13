@@ -1,0 +1,27 @@
+export function isIpv4(ip: string) {
+  const regex =
+    /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
+  return regex.test(ip);
+}
+
+export function ipv4ToInt(ip: string): number {
+  return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0);
+}
+
+export function intToIpv4(ip: number): string {
+  return `${(ip >> 24) & 0xff}.${(ip >> 16) & 0xff}.${(ip >> 8) & 0xff}.${ip & 0xff}`;
+}
+
+export function maskFromLen(len: number): number {
+  return (0xffffffff << (32 - len)) >>> 0;
+}
+
+export function lenFromMask(mask: number): number | null {
+  const inverted = ~mask >>> 0;
+  if ((inverted & (inverted + 1)) !== 0) return null;
+  return 32 - Math.clz32(mask);
+}
+
+export function network(ip: number, mask: number): number {
+  return ip & mask;
+}
