@@ -16,6 +16,15 @@ export function maskFromLen(len: number): number {
   return (0xffffffff << (32 - len)) >>> 0;
 }
 
+export function minMaskFromIpNetwork(ip: number, network: number): number {
+  for (let i = 0; i <= 32; i++) {
+    const mask = maskFromLen(i)
+    if (networkFromIpMask(ip, maskFromLen(i)) === network)
+      return mask;
+  }
+  return -1;
+}
+
 export function lenFromMask(mask: number): number | null {
   const inverted = ~mask >>> 0;
   if ((inverted & (inverted + 1)) !== 0) return null;
@@ -28,6 +37,6 @@ export function lenFromMask(mask: number): number | null {
   return len;
 }
 
-export function network(ip: number, mask: number): number {
+export function networkFromIpMask(ip: number, mask: number): number {
   return ip & mask;
 }

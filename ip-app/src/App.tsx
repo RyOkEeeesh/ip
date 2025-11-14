@@ -1,20 +1,37 @@
 import { useEffect, useMemo, useState } from 'react';
-import './App.css';
-import * as ipUtils from './ipUtils';
+import { ipv4ToInt, isIpv4, minMaskFromIpNetwork, networkFromIpMask } from './ipUtils';
 
-// カスタムフックでIP管理を共通化
+type IntIPv4 = number | null;
+
 function useIpv4State(initial?: string) {
-  const [text, setText] = useState(initial ?? '');
-  const [intVal, setIntVal] = useState<number | null>(null);
+  // IPアドレスを1つのINT型変数に入れること
+  const [ip, setIp] = useState<IntIPv4>(null);
+  // サブネットマスクも同様
+  const [mask, setMask] = useState<IntIPv4>(null);
+  // ipアドレスinput用
+  const [value, setValue] = useState(initial ?? '');
+  const [network, setNetwork] = useState<IntIPv4>(null);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
-    setText(value);
-    if (ipUtils.isIpv4(value)) setIntVal(ipUtils.ipv4ToInt(value));
-    else setIntVal(null);
+    setValue(value);
   }
 
-  return { text, intVal, setText, setIntVal, handleChange };
+  useEffect(() => {
+    setIp(isIpv4(value) ? ipv4ToInt(value) : null);
+  }, [value]);
+
+  useEffect(() => {
+    if (!ip || !mask) return;
+    setNetwork(networkFromIpMask(ip, mask));
+  }, [ip, mask]);
+
+  useEffect(() => {
+    if (!ip || !network) return;
+    setMask(minMaskFromIpNetwork(ip, network));
+  }, [ip, network])
+
+  return { ip, mask, value,network, setIp, setMask, setValue, setNetwork, handleChange };
 }
 
 type InputProps = {
@@ -25,7 +42,13 @@ type InputProps = {
   children?: React.ReactNode;
 };
 
-function TextInput({ label, placeholder, value, onChange, children }: InputProps) {
+function TextInput({
+  label,
+  placeholder,
+  value,
+  onChange,
+  children,
+}: InputProps) {
   return (
     <div className="input-group">
       <label>{label}</label>
@@ -47,17 +70,17 @@ function MaskInput({
   onMaskChange,
 }: {
   label: string;
-  maskInt: number | null;
-  onMaskChange: (newMask: number | null) => void;
+  maskInt: IntIPv4;
+  onMaskChange: (newMask: IntIPv4) => void;
 }) {
-  const len = maskInt ? ipUtils.lenFromMask(maskInt) ?? -1 : -1;
+  const len = maskInt ? (lenFromMask(maskInt) ?? -1) : -1;
 
   function handleLenChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const value = Number(e.target.value);
-    onMaskChange(value === -1 ? null : ipUtils.maskFromLen(value));
+    onMaskChange(value === -1 ? null : maskFromLen(value));
   }
 
-  const maskText = maskInt ? ipUtils.intToIpv4(maskInt) : '';
+  const maskText = maskInt ? intToIpv4(maskInt) : '';
   return (
     <TextInput
       label={label}
@@ -65,7 +88,7 @@ function MaskInput({
       placeholder="255.255.255.0"
       onChange={(e) => {
         const v = e.target.value;
-        if (ipUtils.isIpv4(v)) onMaskChange(ipUtils.ipv4ToInt(v));
+        if (isIpv4(v)) onMaskChange(ipv4ToInt(v));
         else onMaskChange(null);
       }}
     >
@@ -87,8 +110,8 @@ function MutualInputBox({
   onMaskChange,
 }: {
   ipHook: ReturnType<typeof useIpv4State>;
-  maskInt: number | null;
-  onMaskChange: (newMask: number | null) => void;
+  maskInt: IntIPv4;
+  onMaskChange: (newMask: IntIPv4) => void;
 }) {
   return (
     <div className="mutual-box">
@@ -98,7 +121,11 @@ function MutualInputBox({
         value={ipHook.text}
         onChange={ipHook.handleChange}
       />
-      <MaskInput label="Subnet Mask" maskInt={maskInt} onMaskChange={onMaskChange} />
+      <MaskInput
+        label="Subnet Mask"
+        maskInt={maskInt}
+        onMaskChange={onMaskChange}
+      />
     </div>
   );
 }
@@ -106,14 +133,14 @@ function MutualInputBox({
 function MutualCommunication() {
   const ip1 = useIpv4State();
   const ip2 = useIpv4State();
-  const [mask1, setMask1] = useState<number | null>(null);
-  const [mask2, setMask2] = useState<number | null>(null);
+  const [mask1, setMask1] = useState<IntIPv4>(null);
+  const [mask2, setMask2] = useState<IntIPv4>(null);
 
   const canCommunicate = useMemo(() => {
     if (!ip1.intVal || !ip2.intVal || !mask1 || !mask2) return null;
     return (
-      (ip1.intVal & mask2) === ipUtils.network(ip2.intVal, mask2) &&
-      (ip2.intVal & mask1) === ipUtils.network(ip1.intVal, mask1)
+      (ip1.intVal & mask2) === network(ip2.intVal, mask2) &&
+      (ip2.intVal & mask1) === network(ip1.intVal, mask1)
     );
   }, [ip1.intVal, ip2.intVal, mask1, mask2]);
 
