@@ -1,62 +1,57 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ipv4ToInt, isIpv4, minMaskFromIpNetwork, networkFromIpMask } from './ipUtils';
+import {
+  intToIpv4,
+  ipv4ToInt,
+  isIpv4,
+  lenFromMask,
+  maskFromLen,
+  networkFromIpMask,
+} from './ipUtils';
 
 type IntIPv4 = number | null;
 
-function useIpv4State(initial?: string) {
+function useIpv4State() {
   // IPアドレスを1つのINT型変数に入れること
   const [ip, setIp] = useState<IntIPv4>(null);
   // サブネットマスクも同様
   const [mask, setMask] = useState<IntIPv4>(null);
-  // ipアドレスinput用
-  const [value, setValue] = useState(initial ?? '');
-  const [network, setNetwork] = useState<IntIPv4>(null);
-
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const value = e.target.value;
-    setValue(value);
-  }
-
-  useEffect(() => {
-    setIp(isIpv4(value) ? ipv4ToInt(value) : null);
-  }, [value]);
-
-  useEffect(() => {
-    if (!ip || !mask) return;
-    setNetwork(networkFromIpMask(ip, mask));
-  }, [ip, mask]);
-
-  useEffect(() => {
-    if (!ip || !network) return;
-    setMask(minMaskFromIpNetwork(ip, network));
-  }, [ip, network])
-
-  return { ip, mask, value,network, setIp, setMask, setValue, setNetwork, handleChange };
+  return { ip, mask, setIp, setMask };
 }
-
-type InputProps = {
-  label: string;
-  placeholder?: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  children?: React.ReactNode;
-};
 
 function TextInput({
   label,
   placeholder,
-  value,
-  onChange,
+  ip,
+  setIp,
   children,
-}: InputProps) {
+}: {
+  label: string;
+  placeholder?: string;
+  ip: IntIPv4;
+  setIp: React.Dispatch<React.SetStateAction<IntIPv4>>;
+  children?: React.ReactNode;
+}) {
+  const [text, setText] = useState('');
+
+  useEffect(() => {
+    if (!ip) return;
+    setText(intToIpv4(ip));
+  }, [ip]);
+
+  function handleCHange(e: React.ChangeEvent<HTMLInputElement>) {
+    const text = e.target.value;
+    setText(text);
+    setIp(isIpv4(text) ? ipv4ToInt(text) : null);
+  }
+
   return (
     <div className="input-group">
       <label>{label}</label>
       <input
         type="text"
-        value={value}
+        value={text}
         placeholder={placeholder}
-        onChange={onChange}
+        onChange={handleCHange}
         maxLength={15}
       />
       {children}
@@ -66,36 +61,31 @@ function TextInput({
 
 function MaskInput({
   label,
-  maskInt,
-  onMaskChange,
+  mask,
+  setMask,
 }: {
   label: string;
-  maskInt: IntIPv4;
-  onMaskChange: (newMask: IntIPv4) => void;
+  mask: IntIPv4;
+  setMask: React.Dispatch<React.SetStateAction<IntIPv4>>;
 }) {
-  const len = maskInt ? (lenFromMask(maskInt) ?? -1) : -1;
+  const len = mask ? (lenFromMask(mask) ?? -1) : -1;
 
   function handleLenChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const value = Number(e.target.value);
-    onMaskChange(value === -1 ? null : maskFromLen(value));
+    const len = Number(e.target.value);
+    setMask(len === -1 ? null : maskFromLen(len));
   }
 
-  const maskText = maskInt ? intToIpv4(maskInt) : '';
   return (
     <TextInput
       label={label}
-      value={maskText}
+      ip={mask}
+      setIp={setMask}
       placeholder="255.255.255.0"
-      onChange={(e) => {
-        const v = e.target.value;
-        if (isIpv4(v)) onMaskChange(ipv4ToInt(v));
-        else onMaskChange(null);
-      }}
     >
       <select value={len} onChange={handleLenChange}>
         <option value={-1}> / </option>
         {Array.from({ length: 33 }).map((_, i) => (
-          <option key={i} value={i}>
+          <option key={`option-${i}`} value={i}>
             /{i}
           </option>
         ))}
@@ -106,53 +96,50 @@ function MaskInput({
 
 function MutualInputBox({
   ipHook,
-  maskInt,
-  onMaskChange,
 }: {
   ipHook: ReturnType<typeof useIpv4State>;
-  maskInt: IntIPv4;
-  onMaskChange: (newMask: IntIPv4) => void;
 }) {
   return (
     <div className="mutual-box">
       <TextInput
         label="IP Address"
         placeholder="192.168.0.1"
-        value={ipHook.text}
-        onChange={ipHook.handleChange}
+        ip={ipHook.ip}
+        setIp={ipHook.setIp}
       />
       <MaskInput
         label="Subnet Mask"
-        maskInt={maskInt}
-        onMaskChange={onMaskChange}
+        mask={ipHook.mask}
+        setMask={ipHook.setMask}
       />
     </div>
   );
 }
 
 function MutualCommunication() {
-  const ip1 = useIpv4State();
-  const ip2 = useIpv4State();
-  const [mask1, setMask1] = useState<IntIPv4>(null);
-  const [mask2, setMask2] = useState<IntIPv4>(null);
+  const ipHooks = [useIpv4State(), useIpv4State()];
 
-  const canCommunicate = useMemo(() => {
-    if (!ip1.intVal || !ip2.intVal || !mask1 || !mask2) return null;
+  const canCommunicate: boolean | null = useMemo(() => {
+    if (
+      !ipHooks[0].ip ||
+      !ipHooks[1].ip ||
+      !ipHooks[0].mask ||
+      !ipHooks[1].mask
+    )
+      return null;
     return (
-      (ip1.intVal & mask2) === network(ip2.intVal, mask2) &&
-      (ip2.intVal & mask1) === network(ip1.intVal, mask1)
+      (ipHooks[0].ip & ipHooks[1].mask) ===
+        networkFromIpMask(ipHooks[1].ip, ipHooks[1].mask) &&
+      (ipHooks[1].ip & ipHooks[0].mask) ===
+        networkFromIpMask(ipHooks[0].ip, ipHooks[0].mask)
     );
-  }, [ip1.intVal, ip2.intVal, mask1, mask2]);
-
-  useEffect(() => {
-    if (canCommunicate !== null)
-      console.log(`通信可能: ${canCommunicate ? 'Yes' : 'No'}`);
-  }, [canCommunicate]);
+  }, [ipHooks[0].ip, ipHooks[1].ip, ipHooks[0].mask, ipHooks[1].mask]);
 
   return (
     <div className="mutual-container">
-      <MutualInputBox ipHook={ip1} maskInt={mask1} onMaskChange={setMask1} />
-      <MutualInputBox ipHook={ip2} maskInt={mask2} onMaskChange={setMask2} />
+      {ipHooks.map((ipHook, i) => (
+        <MutualInputBox key={`box-${i}`} ipHook={ipHook} />
+      ))}
       {canCommunicate !== null && (
         <p>通信可能: {canCommunicate ? '✅ Yes' : '❌ No'}</p>
       )}
