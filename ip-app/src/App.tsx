@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import {
   intToIpv4,
   ipv4ToInt,
@@ -44,11 +44,14 @@ function TextInput({
     setIp(isIpv4(text) ? ipv4ToInt(text) : null);
   }
 
+  const generatedId = useId();
+
   return (
-    <div className="input-group">
-      <label>{label}</label>
+    <div className="flex gap-1">
+      <label className="block w-24" htmlFor={generatedId}>{label}</label>
       <input
         type="text"
+        id={generatedId}
         value={text}
         placeholder={placeholder}
         onChange={handleCHange}
@@ -82,7 +85,7 @@ function MaskInput({
       setIp={setMask}
       placeholder="255.255.255.0"
     >
-      <select value={len} onChange={handleLenChange}>
+      <select className="" value={len} onChange={handleLenChange}>
         <option value={-1}> / </option>
         {Array.from({ length: 33 }).map((_, i) => (
           <option key={`option-${i}`} value={i}>
@@ -136,13 +139,17 @@ function MutualCommunication() {
   }, [ipHooks[0].ip, ipHooks[1].ip, ipHooks[0].mask, ipHooks[1].mask]);
 
   return (
-    <div className="mutual-container">
-      {ipHooks.map((ipHook, i) => (
-        <MutualInputBox key={`box-${i}`} ipHook={ipHook} />
-      ))}
-      {canCommunicate !== null && (
-        <p>通信可能: {canCommunicate ? '✅ Yes' : '❌ No'}</p>
-      )}
+    <div className="h-full w-full flex flex-col items-center justify-center">
+      <div className="flex gap-2">
+        {ipHooks.map((ipHook, i) => (
+          <MutualInputBox key={`box-${i}`} ipHook={ipHook} />
+        ))}
+      </div>
+      <div className="">
+        {canCommunicate !== null && (
+          <p>通信可能: {canCommunicate ? '✅ Yes' : '❌ No'}</p>
+        )}
+      </div>
     </div>
   );
 }
