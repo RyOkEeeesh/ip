@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   intToIpv4,
   ipv4ToInt,
@@ -48,7 +48,9 @@ function TextInput({
 
   return (
     <div className="flex gap-1">
-      <label className="block w-24" htmlFor={generatedId}>{label}</label>
+      <label className="block w-24" htmlFor={generatedId}>
+        {label}
+      </label>
       <input
         type="text"
         id={generatedId}
@@ -139,10 +141,13 @@ function MutualCommunication() {
   }, [ipHooks[0].ip, ipHooks[1].ip, ipHooks[0].mask, ipHooks[1].mask]);
 
   return (
-    <div className="h-full w-full flex flex-col items-center justify-center">
+    <div className="flex h-full w-full flex-col items-center justify-center">
       <div className="flex gap-2">
         {ipHooks.map((ipHook, i) => (
-          <MutualInputBox key={`box-${i}`} ipHook={ipHook} />
+          <div>
+            <p className="text-center">IP {i + 1}</p>
+            <MutualInputBox key={`box-${i}`} ipHook={ipHook} />
+          </div>
         ))}
       </div>
       <div className="">
@@ -155,5 +160,20 @@ function MutualCommunication() {
 }
 
 export default function App() {
-  return <MutualCommunication />;
+  const wrapperRef = useRef<HTMLDivElement>(null!);
+
+  useEffect(() => {
+    if (!wrapperRef.current) return;
+    function addTransition() {
+      wrapperRef.current.classList.add('transition duration-300');
+    }
+    window.addEventListener('load', addTransition);
+    return window.removeEventListener('load', addTransition);
+  }, []);
+
+  return (
+    <div ref={wrapperRef} className="h-full w-full">
+      <MutualCommunication />
+    </div>
+  );
 }
