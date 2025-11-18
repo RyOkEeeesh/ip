@@ -3,3 +3,21 @@
 html {
   font-size: 20px;
 }
+
+:root {
+  --bg: #fefce8;
+  --clr: #000000;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root { 
+    --bg: #1e2939;
+    --clr: #ffffff;
+  }
+}
+
+#wrapper {
+  background-color: var(--bg);
+  color: var(--clr);
+  @apply h-full w-full transition-colors duration-300;
+}

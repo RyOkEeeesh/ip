@@ -160,19 +160,8 @@ function MutualCommunication() {
 }
 
 export default function App() {
-  const wrapperRef = useRef<HTMLDivElement>(null!);
-
-  useEffect(() => {
-    if (!wrapperRef.current) return;
-    function addTransition() {
-      wrapperRef.current.classList.add("transition", "duration-300");
-    }
-    window.addEventListener('load', addTransition);
-    return () => { window.removeEventListener('load', addTransition) };
-  }, []);
-
   return (
-    <div ref={wrapperRef} className="h-full w-full">
+    <div id="wrapper">
       <MutualCommunication />
     </div>
   );
