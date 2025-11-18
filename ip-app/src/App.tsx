@@ -165,10 +165,10 @@ export default function App() {
   useEffect(() => {
     if (!wrapperRef.current) return;
     function addTransition() {
-      wrapperRef.current.classList.add('transition duration-300');
+      wrapperRef.current.classList.add("transition", "duration-300");
     }
     window.addEventListener('load', addTransition);
-    return window.removeEventListener('load', addTransition);
+    return () => { window.removeEventListener('load', addTransition) };
   }, []);
 
   return (
