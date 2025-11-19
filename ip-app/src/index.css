@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 html {
   font-size: 20px;
@@ -7,8 +7,8 @@ html {
 :root {
   --bg: #fefce8;
   --clr: #000000;
-  --input-border: hsl(from var(--clr) h s calc(l + 20));
-  --input-placeholder: hsl(from var(--clr) h s calc(l + 40));
+  --input-border: hsl(from var(--clr) h s calc(l + 27));
+  --input-placeholder: hsl(from var(--clr) h s calc(l + 50));
 }
 
 @theme {
@@ -19,7 +19,7 @@ html {
 }
 
 @media (prefers-color-scheme: dark) {
-  :root { 
+  :root {
     --bg: #1e2939;
     --clr: #ffffff;
     --input-border: hsl(from var(--clr) h s calc(l - 20));
@@ -28,9 +28,28 @@ html {
 }
 
 #wrapper {
-  @apply h-full w-full bg-bgclr text-txclr transition-colors duration-300;
+  @apply bg-bgclr text-txclr h-full w-full transition-colors duration-300;
+}
+
+.input-wrap {
+  @apply h-fit w-fit;
+}
+.input-wrap:has(.select-len) {
+  @apply relative;
 }
 
 .input-ip {
-  @apply border border-r-0 border-input-border placeholder-input-placeholder px-2 py-0.5;
+  @apply border-input-border placeholder-input-placeholder h-8 w-32 border border-r-0 px-3 py-0.5;
+}
+
+.input-mask {
+  @apply border-input-border placeholder-input-placeholder h-8 w-44 border px-2 py-0.5;
+}
+
+.select-len {
+  @apply bg-bgclr text-txclr border-input-border h-8 w-12 appearance-none border border-l-0 py-0.5 pr-4;
+}
+
+.select-allow {
+  @apply absolute top-4 right-0.5 block h-2 w-2 -translate-x-1/4 -translate-y-1 rotate-45 border-r-2 border-b-2 peer-focus:-rotate-135;
 }

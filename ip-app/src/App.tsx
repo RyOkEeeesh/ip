@@ -52,19 +52,21 @@ function TextInput({
 
   return (
     <>
-      <label className="block w-24" htmlFor={generatedId}>
+      <label className="block" htmlFor={generatedId}>
         {label}
       </label>
-      <input
-        type="text"
-        className={className}
-        id={generatedId}
-        value={text}
-        placeholder={placeholder}
-        onChange={handleCHange}
-        maxLength={15}
-      />
-      {children}
+      <div className="input-wrap">
+        <input
+          type="text"
+          className={className}
+          id={generatedId}
+          value={text}
+          placeholder={placeholder}
+          onChange={handleCHange}
+          maxLength={15}
+        />
+        {children}
+      </div>
     </>
   );
 }
@@ -89,17 +91,31 @@ function IpInput({
     setMask(len === -1 ? null : maskFromLen(len));
   }
 
+  const generatedId = useId();
+
   return (
     <>
-      <TextInput className='input-ip' label={label} placeholder={placeholder} ip={ip} setIp={setIp}>
-        <select className="" value={len} onChange={handleLenChange}>
+      <TextInput
+        className="input-ip"
+        label={label}
+        placeholder={placeholder}
+        ip={ip}
+        setIp={setIp}
+      >
+        <select
+          id={generatedId}
+          className="peer select-len"
+          value={len}
+          onChange={handleLenChange}
+        >
           <option value={-1}> / </option>
           {Array.from({ length: 33 }).map((_, i) => (
             <option key={`option-${i}`} value={i}>
-              /{i}
+              / {i}
             </option>
           ))}
         </select>
+        <label htmlFor={generatedId} className="select-allow"></label>
       </TextInput>
     </>
   );
@@ -121,6 +137,7 @@ function MutualInputBox({
         setMask={ipHook.setMask}
       />
       <TextInput
+        className="input-mask"
         label="Subnet Mask"
         ip={ipHook.mask}
         setIp={ipHook.setMask}
