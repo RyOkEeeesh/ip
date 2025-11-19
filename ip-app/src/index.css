@@ -7,17 +7,30 @@ html {
 :root {
   --bg: #fefce8;
   --clr: #000000;
+  --input-border: hsl(from var(--clr) h s calc(l + 20));
+  --input-placeholder: hsl(from var(--clr) h s calc(l + 40));
+}
+
+@theme {
+  --color-bgclr: var(--bg);
+  --color-txclr: var(--clr);
+  --color-input-border: var(--input-border);
+  --color-input-placeholder: var(--input-placeholder);
 }
 
 @media (prefers-color-scheme: dark) {
   :root { 
     --bg: #1e2939;
     --clr: #ffffff;
+    --input-border: hsl(from var(--clr) h s calc(l - 20));
+    --input-placeholder: hsl(from var(--clr) h s calc(l - 40));
   }
 }
 
 #wrapper {
-  background-color: var(--bg);
-  color: var(--clr);
-  @apply h-full w-full transition-colors duration-300;
+  @apply h-full w-full bg-bgclr text-txclr transition-colors duration-300;
+}
+
+.input-ip {
+  @apply border border-r-0 border-input-border placeholder-input-placeholder px-2 py-0.5;
 }

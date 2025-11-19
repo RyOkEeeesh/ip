@@ -9,7 +9,7 @@ export function ipv4ToInt(ip: string): number {
 }
 
 export function intToIpv4(ip: number): string {
-  return `${(ip >> 24) & 0xff}.${(ip >> 16) & 0xff}.${(ip >> 8) & 0xff}.${ip & 0xff}`;
+  return [24, 16, 8, 0].map(s => (ip >> s) & 255).join('.');
 }
 
 export function maskFromLen(len: number): number {

@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import {
   intToIpv4,
   ipv4ToInt,
@@ -18,19 +18,23 @@ function useIpv4State() {
   return { ip, mask, setIp, setMask };
 }
 
+type TextInputProps = {
+  label: string;
+  placeholder?: string;
+  ip: IntIPv4;
+  setIp: React.Dispatch<React.SetStateAction<IntIPv4>>;
+  children?: React.ReactNode;
+  className?: string;
+};
+
 function TextInput({
   label,
   placeholder,
   ip,
   setIp,
   children,
-}: {
-  label: string;
-  placeholder?: string;
-  ip: IntIPv4;
-  setIp: React.Dispatch<React.SetStateAction<IntIPv4>>;
-  children?: React.ReactNode;
-}) {
+  className,
+}: TextInputProps) {
   const [text, setText] = useState('');
 
   useEffect(() => {
@@ -47,12 +51,13 @@ function TextInput({
   const generatedId = useId();
 
   return (
-    <div className="flex gap-1">
+    <>
       <label className="block w-24" htmlFor={generatedId}>
         {label}
       </label>
       <input
         type="text"
+        className={className}
         id={generatedId}
         value={text}
         placeholder={placeholder}
@@ -60,19 +65,23 @@ function TextInput({
         maxLength={15}
       />
       {children}
-    </div>
+    </>
   );
 }
 
-function MaskInput({
-  label,
-  mask,
-  setMask,
-}: {
-  label: string;
+interface IpInputProps extends TextInputProps {
   mask: IntIPv4;
   setMask: React.Dispatch<React.SetStateAction<IntIPv4>>;
-}) {
+}
+
+function IpInput({
+  label,
+  placeholder,
+  ip,
+  setIp,
+  mask,
+  setMask,
+}: IpInputProps) {
   const len = mask ? (lenFromMask(mask) ?? -1) : -1;
 
   function handleLenChange(e: React.ChangeEvent<HTMLSelectElement>) {
@@ -81,21 +90,18 @@ function MaskInput({
   }
 
   return (
-    <TextInput
-      label={label}
-      ip={mask}
-      setIp={setMask}
-      placeholder="255.255.255.0"
-    >
-      <select className="" value={len} onChange={handleLenChange}>
-        <option value={-1}> / </option>
-        {Array.from({ length: 33 }).map((_, i) => (
-          <option key={`option-${i}`} value={i}>
-            /{i}
-          </option>
-        ))}
-      </select>
-    </TextInput>
+    <>
+      <TextInput className='input-ip' label={label} placeholder={placeholder} ip={ip} setIp={setIp}>
+        <select className="" value={len} onChange={handleLenChange}>
+          <option value={-1}> / </option>
+          {Array.from({ length: 33 }).map((_, i) => (
+            <option key={`option-${i}`} value={i}>
+              /{i}
+            </option>
+          ))}
+        </select>
+      </TextInput>
+    </>
   );
 }
 
@@ -106,16 +112,19 @@ function MutualInputBox({
 }) {
   return (
     <div className="mutual-box">
-      <TextInput
+      <IpInput
         label="IP Address"
         placeholder="192.168.0.1"
         ip={ipHook.ip}
         setIp={ipHook.setIp}
-      />
-      <MaskInput
-        label="Subnet Mask"
         mask={ipHook.mask}
         setMask={ipHook.setMask}
+      />
+      <TextInput
+        label="Subnet Mask"
+        ip={ipHook.mask}
+        setIp={ipHook.setMask}
+        placeholder="255.255.255.0"
       />
     </div>
   );
@@ -144,9 +153,9 @@ function MutualCommunication() {
     <div className="flex h-full w-full flex-col items-center justify-center">
       <div className="flex gap-2">
         {ipHooks.map((ipHook, i) => (
-          <div>
+          <div key={`box-${i}`}>
             <p className="text-center">IP {i + 1}</p>
-            <MutualInputBox key={`box-${i}`} ipHook={ipHook} />
+            <MutualInputBox ipHook={ipHook} />
           </div>
         ))}
       </div>
