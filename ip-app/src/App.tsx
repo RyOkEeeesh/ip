@@ -7,7 +7,7 @@ import {
   maskFromLen,
   networkFromIpMask,
 } from './ipUtils';
-import Select, { type SingleValue } from 'react-select';
+import Select, { type FilterOptionOption, type GroupBase, type SingleValue, type StylesConfig } from 'react-select';
 
 type IntIPv4 = number | null;
 
@@ -104,7 +104,7 @@ function IpInput({
       : undefined;
 
   const styles = {
-    control: (styles: Record<string, string>) => ({
+    control: (styles: any) => ({
       ...styles,
       position: 'relative',
       display: 'flex',
@@ -123,7 +123,7 @@ function IpInput({
         transform: 'translateY(-50%)',
       },
     }),
-    input: (styles: Record<string, string>) => ({
+    input: (styles: any) => ({
       ...styles,
       color: 'var(--color-txclr)',
       width: '1rem',
@@ -149,7 +149,7 @@ function IpInput({
         value={selectedValue}
         onChange={handleLenChange}
         options={options}
-        filterOption={(option: OptionType, val: string) => (Number(option.value) !== -1) && (option.label.includes(val))}
+        filterOption={(option: FilterOptionOption<OptionType>, val: string) => (Number(option.value) !== -1) && (option.label.includes(val))}
         placeholder=""
         styles={styles}
       />
