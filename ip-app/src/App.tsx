@@ -104,7 +104,7 @@ function IpInput({
       : undefined;
 
   const styles = {
-    control: (styles) => ({
+    control: (styles: Record<string, string>) => ({
       ...styles,
       position: 'relative',
       display: 'flex',
@@ -123,7 +123,7 @@ function IpInput({
         transform: 'translateY(-50%)',
       },
     }),
-    input: (styles) => ({
+    input: (styles: Record<string, string>) => ({
       ...styles,
       color: 'var(--color-txclr)',
       width: '1rem',
