@@ -149,7 +149,7 @@ function IpInput({
         value={selectedValue}
         onChange={handleLenChange}
         options={options}
-        filterOption={(option, val) => (Number(option.value) !== -1) && (option.label.includes(val))}
+        filterOption={(option: OptionType, val: string) => (Number(option.value) !== -1) && (option.label.includes(val))}
         placeholder=""
         styles={styles}
       />
