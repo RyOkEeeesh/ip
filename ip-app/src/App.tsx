@@ -104,7 +104,8 @@ function IpInput({
       : undefined;
 
   const styles = {
-    control: () => ({
+    control: (styles) => ({
+      ...styles,
       position: 'relative',
       display: 'flex',
       backgroundColor: 'var(--color-bgclr)',
@@ -122,7 +123,7 @@ function IpInput({
         transform: 'translateY(-50%)',
       },
     }),
-    input: (styles, { isSelected }) => ({
+    input: (styles) => ({
       ...styles,
       color: 'var(--color-txclr)',
       width: '1rem',
@@ -132,7 +133,6 @@ function IpInput({
   function handleLenChange(e: SingleValue<OptionType>) {
     if (!e) return;
     const len = e.value;
-    console.log(len);
     setMask(len === -1 ? null : maskFromLen(len));
   }
 
@@ -149,6 +149,7 @@ function IpInput({
         value={selectedValue}
         onChange={handleLenChange}
         options={options}
+        filterOption={(option, val) => (Number(option.value) !== -1) && (option.label.includes(val))}
         placeholder=""
         styles={styles}
       />
