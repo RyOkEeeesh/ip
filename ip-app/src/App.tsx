@@ -7,13 +7,12 @@ import {
   maskFromLen,
   networkFromIpMask,
 } from './ipUtils';
+import Select, { type SingleValue } from 'react-select';
 
 type IntIPv4 = number | null;
 
 function useIpv4State() {
-  // IPアドレスを1つのINT型変数に入れること
   const [ip, setIp] = useState<IntIPv4>(null);
-  // サブネットマスクも同様
   const [mask, setMask] = useState<IntIPv4>(null);
   return { ip, mask, setIp, setMask };
 }
@@ -37,15 +36,19 @@ function TextInput({
 }: TextInputProps) {
   const [text, setText] = useState('');
 
+  // ip が null のときは空文字にする（以前は falsy 判定で 0 を無視していた）
   useEffect(() => {
-    if (!ip) return;
+    if (ip === null) {
+      setText('');
+      return;
+    }
     setText(intToIpv4(ip));
   }, [ip]);
 
   function handleCHange(e: React.ChangeEvent<HTMLInputElement>) {
-    const text = e.target.value;
-    setText(text);
-    setIp(isIpv4(text) ? ipv4ToInt(text) : null);
+    const t = e.target.value;
+    setText(t);
+    setIp(isIpv4(t) ? ipv4ToInt(t) : null);
   }
 
   const generatedId = useId();
@@ -76,6 +79,17 @@ interface IpInputProps extends TextInputProps {
   setMask: React.Dispatch<React.SetStateAction<IntIPv4>>;
 }
 
+type OptionType = {
+  value: number;
+  label: string;
+};
+
+const options: OptionType[] = Array.from({ length: 32 }, (_, i) => ({
+  value: i + 1,
+  label: `${i + 1}`,
+}));
+options.unshift({ value: -1, label: '' });
+
 function IpInput({
   label,
   placeholder,
@@ -84,40 +98,61 @@ function IpInput({
   mask,
   setMask,
 }: IpInputProps) {
-  const len = mask ? (lenFromMask(mask) ?? -1) : -1;
+  const selectedValue =
+    mask !== null
+      ? options.find((o) => o.value === lenFromMask(mask))
+      : undefined;
 
-  function handleLenChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const len = Number(e.target.value);
+  const styles = {
+    control: () => ({
+      position: 'relative',
+      display: 'flex',
+      backgroundColor: 'var(--color-bgclr)',
+      height: 'var(--spacing-input-h)',
+      borderRadius: 0,
+      border: '1px solid var(--color-input-border)',
+      borderLeft: 0,
+
+      ':before': {
+        position: 'absolute',
+        fontSize: 16,
+        content: '"/"',
+        top: '50%',
+        left: 0,
+        transform: 'translateY(-50%)',
+      },
+    }),
+    input: (styles, { isSelected }) => ({
+      ...styles,
+      color: 'var(--color-txclr)',
+      width: '1rem',
+    }),
+  };
+
+  function handleLenChange(e: SingleValue<OptionType>) {
+    if (!e) return;
+    const len = e.value;
+    console.log(len);
     setMask(len === -1 ? null : maskFromLen(len));
   }
 
-  const generatedId = useId();
-
   return (
-    <>
-      <TextInput
-        className="input-ip"
-        label={label}
-        placeholder={placeholder}
-        ip={ip}
-        setIp={setIp}
-      >
-        <select
-          id={generatedId}
-          className="peer select-len"
-          value={len}
-          onChange={handleLenChange}
-        >
-          <option value={-1}> / </option>
-          {Array.from({ length: 33 }).map((_, i) => (
-            <option key={`option-${i}`} value={i}>
-              / {i}
-            </option>
-          ))}
-        </select>
-        <label htmlFor={generatedId} className="select-allow"></label>
-      </TextInput>
-    </>
+    <TextInput
+      className="input-ip"
+      label={label}
+      placeholder={placeholder}
+      ip={ip}
+      setIp={setIp}
+    >
+      <Select
+        className="rs_content"
+        value={selectedValue}
+        onChange={handleLenChange}
+        options={options}
+        placeholder=""
+        styles={styles}
+      />
+    </TextInput>
   );
 }
 
@@ -152,17 +187,17 @@ function MutualCommunication() {
 
   const canCommunicate: boolean | null = useMemo(() => {
     if (
-      !ipHooks[0].ip ||
-      !ipHooks[1].ip ||
-      !ipHooks[0].mask ||
-      !ipHooks[1].mask
+      ipHooks[0].ip === null ||
+      ipHooks[1].ip === null ||
+      ipHooks[0].mask === null ||
+      ipHooks[1].mask === null
     )
       return null;
     return (
       (ipHooks[0].ip & ipHooks[1].mask) ===
-        networkFromIpMask(ipHooks[1].ip, ipHooks[1].mask) &&
+        networkFromIpMask(ipHooks[1].ip!, ipHooks[1].mask!) &&
       (ipHooks[1].ip & ipHooks[0].mask) ===
-        networkFromIpMask(ipHooks[0].ip, ipHooks[0].mask)
+        networkFromIpMask(ipHooks[0].ip!, ipHooks[0].mask!)
     );
   }, [ipHooks[0].ip, ipHooks[1].ip, ipHooks[0].mask, ipHooks[1].mask]);
 

@@ -26,6 +26,8 @@ export function minMaskFromIpNetwork(ip: number, network: number): number {
 }
 
 export function lenFromMask(mask: number): number | null {
+  if (mask === -1) return null;
+
   const inverted = ~mask >>> 0;
   if ((inverted & (inverted + 1)) !== 0) return null;
 
