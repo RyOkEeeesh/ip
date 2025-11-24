@@ -7,7 +7,13 @@ import {
   maskFromLen,
   networkFromIpMask,
 } from './ipUtils';
-import Select, { type FilterOptionOption, type GroupBase, type SingleValue, type StylesConfig } from 'react-select';
+import Select, {
+  components,
+  type FilterOptionOption,
+  type SingleValue,
+} from 'react-select';
+
+// https://chatgpt.com/share/691e675e-d920-8009-8dca-8d4dd08641a5
 
 type IntIPv4 = number | null;
 
@@ -34,20 +40,20 @@ function TextInput({
   children,
   className,
 }: TextInputProps) {
-  const [text, setText] = useState('');
+  const [value, setValue] = useState('');
 
   // ip が null のときは空文字にする（以前は falsy 判定で 0 を無視していた）
   useEffect(() => {
     if (ip === null) {
-      setText('');
+      setValue('');
       return;
     }
-    setText(intToIpv4(ip));
+    setValue(intToIpv4(ip));
   }, [ip]);
 
   function handleCHange(e: React.ChangeEvent<HTMLInputElement>) {
     const t = e.target.value;
-    setText(t);
+    setValue(t);
     setIp(isIpv4(t) ? ipv4ToInt(t) : null);
   }
 
@@ -63,7 +69,7 @@ function TextInput({
           type="text"
           className={className}
           id={generatedId}
-          value={text}
+          value={value}
           placeholder={placeholder}
           onChange={handleCHange}
           maxLength={15}
@@ -72,11 +78,6 @@ function TextInput({
       </div>
     </>
   );
-}
-
-interface IpInputProps extends TextInputProps {
-  mask: IntIPv4;
-  setMask: React.Dispatch<React.SetStateAction<IntIPv4>>;
 }
 
 type OptionType = {
@@ -90,71 +91,21 @@ const options: OptionType[] = Array.from({ length: 32 }, (_, i) => ({
 }));
 options.unshift({ value: -1, label: '' });
 
-function IpInput({
-  label,
-  placeholder,
-  ip,
-  setIp,
-  mask,
-  setMask,
-}: IpInputProps) {
-  const selectedValue =
-    mask !== null
-      ? options.find((o) => o.value === lenFromMask(mask))
-      : undefined;
+type LeninputProps = {
+  mask: IntIPv4;
+  setMask: React.Dispatch<React.SetStateAction<IntIPv4>>;
+};
 
-  const styles = {
-    control: (styles: any) => ({
-      ...styles,
-      position: 'relative',
-      display: 'flex',
-      backgroundColor: 'var(--color-bgclr)',
-      height: 'var(--spacing-input-h)',
-      borderRadius: 0,
-      border: '1px solid var(--color-input-border)',
-      borderLeft: 0,
+function Leninput({ mask, setMask }: LeninputProps) {
+  const [value, setValue] = useState('');
 
-      ':before': {
-        position: 'absolute',
-        fontSize: 16,
-        content: '"/"',
-        top: '50%',
-        left: 0,
-        transform: 'translateY(-50%)',
-      },
-    }),
-    input: (styles: any) => ({
-      ...styles,
-      color: 'var(--color-txclr)',
-      width: '1rem',
-    }),
-  };
+  useEffect(() => {}, [mask]);
 
-  function handleLenChange(e: SingleValue<OptionType>) {
+  function handleCHange(e: SingleValue<OptionType>) {
     if (!e) return;
-    const len = e.value;
-    setMask(len === -1 ? null : maskFromLen(len));
+    setMask(e.value);
   }
-
-  return (
-    <TextInput
-      className="input-ip"
-      label={label}
-      placeholder={placeholder}
-      ip={ip}
-      setIp={setIp}
-    >
-      <Select
-        className="rs_content"
-        value={selectedValue}
-        onChange={handleLenChange}
-        options={options}
-        filterOption={(option: FilterOptionOption<OptionType>, val: string) => (Number(option.value) !== -1) && (option.label.includes(val))}
-        placeholder=""
-        styles={styles}
-      />
-    </TextInput>
-  );
+  return <Select options={options} />;
 }
 
 function MutualInputBox({
@@ -164,14 +115,16 @@ function MutualInputBox({
 }) {
   return (
     <div className="mutual-box">
-      <IpInput
+      <TextInput
+        className=""
         label="IP Address"
         placeholder="192.168.0.1"
         ip={ipHook.ip}
         setIp={ipHook.setIp}
-        mask={ipHook.mask}
-        setMask={ipHook.setMask}
-      />
+      >
+        <Leninput mask={ipHook.ip} setMask={ipHook.setMask} />
+      </TextInput>
+
       <TextInput
         className="input-mask"
         label="Subnet Mask"
