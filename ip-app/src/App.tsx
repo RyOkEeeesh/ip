@@ -1,19 +1,14 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   intToIpv4,
+  IP_MAX,
+  IP_MIN,
   ipv4ToInt,
   isIpv4,
   lenFromMask,
   maskFromLen,
   networkFromIpMask,
 } from './ipUtils';
-import Select, {
-  components,
-  type FilterOptionOption,
-  type SingleValue,
-} from 'react-select';
-
-// https://chatgpt.com/share/691e675e-d920-8009-8dca-8d4dd08641a5
 
 type IntIPv4 = number | null;
 
@@ -40,19 +35,23 @@ function TextInput({
   children,
   className,
 }: TextInputProps) {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState("");
+  const isInternalRef = useRef<boolean>(false);
 
-  // ip が null のときは空文字にする（以前は falsy 判定で 0 を無視していた）
   useEffect(() => {
     if (ip === null) {
-      setValue('');
+      if (!isInternalRef.current) setValue("");
       return;
+    } else {
+      const formatted = intToIpv4(ip);
+      if (formatted !== value) setValue(formatted);
     }
-    setValue(intToIpv4(ip));
+    isInternalRef.current = false;
   }, [ip]);
 
-  function handleCHange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const t = e.target.value;
+    isInternalRef.current = true;
     setValue(t);
     setIp(isIpv4(t) ? ipv4ToInt(t) : null);
   }
@@ -71,7 +70,7 @@ function TextInput({
           id={generatedId}
           value={value}
           placeholder={placeholder}
-          onChange={handleCHange}
+          onChange={handleChange}
           maxLength={15}
         />
         {children}
@@ -85,7 +84,7 @@ type OptionType = {
   label: string;
 };
 
-const options: OptionType[] = Array.from({ length: 32 }, (_, i) => ({
+const options: OptionType[] = Array.from({ length: 33 }, (_, i) => ({
   value: i + 1,
   label: `${i + 1}`,
 }));
@@ -97,15 +96,49 @@ type LeninputProps = {
 };
 
 function Leninput({ mask, setMask }: LeninputProps) {
-  const [value, setValue] = useState('');
+  const [open, setOpen] = useState<boolean>(false);
+  const [value, setValue] = useState<string>('');
 
-  useEffect(() => {}, [mask]);
-
-  function handleCHange(e: SingleValue<OptionType>) {
-    if (!e) return;
-    setMask(e.value);
+  function findOption(len: number) {
+    return options.find((o) => o.value === len) ?? options[0];
   }
-  return <Select options={options} />;
+
+  useEffect(() => {
+    if (mask === null) return;
+    setValue(findOption(lenFromMask(mask) ?? -1).label);
+  }, [mask]);
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setValue(e.target.value);
+    if (e.target.value.length === 0) {
+      setMask(null);
+      return;
+    }
+    const val = Number(e.target.value);
+    setMask(isNaN(val) ? null : maskFromLen(val));
+  }
+
+  return (
+    <div className="">
+      <input
+        onChange={handleInputChange}
+        value={value}
+        type="text"
+        name="len"
+        id="len"
+        maxLength={2}
+      />
+      <svg
+        className="text-txclr h-5 w-5"
+        height="20"
+        width="20"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+      >
+        <path d="M4.516 7.548c0.436-0.446 1.043-0.481 1.576 0l3.908 3.747 3.908-3.747c0.533-0.481 1.141-0.446 1.574 0 0.436 0.445 0.408 1.197 0 1.615-0.406 0.418-4.695 4.502-4.695 4.502-0.217 0.223-0.502 0.335-0.787 0.335s-0.57-0.112-0.789-0.335c0 0-4.287-4.084-4.695-4.502s-0.436-1.17 0-1.615z"></path>
+      </svg>
+    </div>
+  );
 }
 
 function MutualInputBox({
@@ -122,7 +155,7 @@ function MutualInputBox({
         ip={ipHook.ip}
         setIp={ipHook.setIp}
       >
-        <Leninput mask={ipHook.ip} setMask={ipHook.setMask} />
+        <Leninput mask={ipHook.mask} setMask={ipHook.setMask} />
       </TextInput>
 
       <TextInput
