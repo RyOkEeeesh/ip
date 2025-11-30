@@ -2,13 +2,15 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   intToIpv4,
   IP_MAX,
-  IP_MIN,
   ipv4ToInt,
   isIpv4,
   lenFromMask,
   maskFromLen,
   networkFromIpMask,
 } from './ipUtils';
+import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from '@headlessui/react';
+import { ChevronDownIcon, SlashIcon } from '@heroicons/react/20/solid';
+import { ValueContainer } from 'react-select/animated';
 
 type IntIPv4 = number | null;
 
@@ -84,60 +86,102 @@ type OptionType = {
   label: string;
 };
 
-const options: OptionType[] = Array.from({ length: 33 }, (_, i) => ({
-  value: i + 1,
-  label: `${i + 1}`,
+const options: OptionType[] = Array.from({ length: IP_MAX + 1 }, (_, i) => ({
+  value: i,
+  label: `${i}`,
 }));
 options.unshift({ value: -1, label: '' });
 
-type LeninputProps = {
+type LenInputProps = {
   mask: IntIPv4;
   setMask: React.Dispatch<React.SetStateAction<IntIPv4>>;
 };
 
-function Leninput({ mask, setMask }: LeninputProps) {
-  const [open, setOpen] = useState<boolean>(false);
-  const [value, setValue] = useState<string>('');
+function Leninput({ mask, setMask }: LenInputProps) {
+  // OptionType を選択オブジェクト全体として保持する
+  const [selectOption, setSelectOption] = useState<OptionType>(options[0]);
+  const [query, setQuery] = useState<string>('');
 
-  function findOption(len: number) {
-    return options.find((o) => o.value === len) ?? options[0];
-  }
+  // 修正 2: queryが空の時は全てのオプションを表示する
+  const filterOption = query === ''
+    ? options
+    : options.filter(op => op.label.toLowerCase().includes(query.toLowerCase()));
 
-  useEffect(() => {
-    if (mask === null) return;
-    setValue(findOption(lenFromMask(mask) ?? -1).label);
-  }, [mask]);
+  // ... (findOption, useEffect は変更なし)
 
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setValue(e.target.value);
-    if (e.target.value.length === 0) {
+  // 外部からの選択と内部の入力の連携
+  function handleSelect(newOption: OptionType | null) {
+    if (newOption === null) {
+      setSelectOption(options[0]);
       setMask(null);
       return;
     }
-    const val = Number(e.target.value);
+    
+    // 選択されたオプション全体を保持
+    setSelectOption(newOption); 
+    
+    // 外部の setMask にも値を反映
+    setMask(maskFromLen(newOption.value));
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setQuery(e.target.value);
+    const inputVal = e.target.value;
+
+    if (inputVal.length === 0) {
+      setMask(null);
+      return;
+    }
+    
+    // ここで直接 setMask を呼び出すロジックは残しつつ、
+    // queryの変更が選択肢のフィルタリングにも使われる
+    const val = Number(inputVal);
     setMask(isNaN(val) ? null : maskFromLen(val));
   }
 
   return (
-    <div className="">
-      <input
-        onChange={handleInputChange}
-        value={value}
-        type="text"
-        name="len"
-        id="len"
-        maxLength={2}
-      />
-      <svg
-        className="text-txclr h-5 w-5"
-        height="20"
-        width="20"
-        viewBox="0 0 20 20"
-        fill="currentColor"
+    <Combobox
+      value={selectOption}
+      // 修正 1: onChangeで受け取るのはオブジェクト全体にする
+      onChange={handleSelect} 
+      onClose={() => setQuery('')}
+    >
+      <div className="flex relative"> {/* CSSの調整が必要ならここに追加 */}
+        <ComboboxInput
+          // displayValueはselectOptionオブジェクトからlabelを抽出
+          displayValue={(op: OptionType) => op?.label}
+          onChange={handleChange}
+          placeholder='24'
+          maxLength={2}
+          className="border border-gray-300 rounded-l p-2 w-full"
+        />
+        <ComboboxButton className="p-2 border border-gray-300 rounded-r bg-gray-50 hover:bg-gray-100">
+          <ChevronDownIcon className='size-4' />
+        </ComboboxButton>
+      </div>
+      <ComboboxOptions
+        anchor="bottom"
+        className="absolute z-10 w-full mt-1 bg-white shadow-lg rounded max-h-60 overflow-auto border border-gray-200"
       >
-        <path d="M4.516 7.548c0.436-0.446 1.043-0.481 1.576 0l3.908 3.747 3.908-3.747c0.533-0.481 1.141-0.446 1.574 0 0.436 0.445 0.408 1.197 0 1.615-0.406 0.418-4.695 4.502-4.695 4.502-0.217 0.223-0.502 0.335-0.787 0.335s-0.57-0.112-0.789-0.335c0 0-4.287-4.084-4.695-4.502s-0.436-1.17 0-1.615z"></path>
-      </svg>
-    </div>
+        {/* フィルタリングされたオプションの長さが0でなければ表示 */}
+        {filterOption.length > 0 ? (
+          filterOption.map(op =>
+            <ComboboxOption
+              key={op.value}
+              // 修正 1: valueにオブジェクト全体を設定
+              value={op} 
+              className='cursor-pointer p-2 data-focus:bg-blue-500 data-focus:text-white'
+            >
+              <div className="">{op.label}</div>
+            </ComboboxOption>
+          )
+        ) : (
+          <div className="relative cursor-default select-none py-2 px-4 text-gray-700">
+            一致するオプションはありません
+          </div>
+        )}
+      </ComboboxOptions>
+    </Combobox>
   );
 }
 
@@ -155,6 +199,7 @@ function MutualInputBox({
         ip={ipHook.ip}
         setIp={ipHook.setIp}
       >
+        <SlashIcon className='size-5' />
         <Leninput mask={ipHook.mask} setMask={ipHook.setMask} />
       </TextInput>
 
