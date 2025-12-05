@@ -8,9 +8,14 @@ import {
   maskFromLen,
   networkFromIpMask,
 } from './ipUtils';
-import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from '@headlessui/react';
-import { ChevronDownIcon, SlashIcon } from '@heroicons/react/20/solid';
-import { ValueContainer } from 'react-select/animated';
+import {
+  Combobox,
+  ComboboxButton,
+  ComboboxInput,
+  ComboboxOption,
+  ComboboxOptions,
+} from '@headlessui/react';
+import { CheckIcon, ChevronDownIcon, DivideIcon, SlashIcon } from '@heroicons/react/20/solid';
 
 type IntIPv4 = number | null;
 
@@ -29,20 +34,13 @@ type TextInputProps = {
   className?: string;
 };
 
-function TextInput({
-  label,
-  placeholder,
-  ip,
-  setIp,
-  children,
-  className,
-}: TextInputProps) {
-  const [value, setValue] = useState("");
+function TextInput({ label, placeholder, ip, setIp, children, className }: TextInputProps) {
+  const [value, setValue] = useState('');
   const isInternalRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (ip === null) {
-      if (!isInternalRef.current) setValue("");
+      if (!isInternalRef.current) setValue('');
       return;
     } else {
       const formatted = intToIpv4(ip);
@@ -65,7 +63,7 @@ function TextInput({
       <label className="block" htmlFor={generatedId}>
         {label}
       </label>
-      <div className="input-wrap">
+      <div className="h-fit w-fit has-[.combobox]:flex">
         <input
           type="text"
           className={className}
@@ -97,31 +95,34 @@ type LenInputProps = {
   setMask: React.Dispatch<React.SetStateAction<IntIPv4>>;
 };
 
-function Leninput({ mask, setMask }: LenInputProps) {
-  // OptionType を選択オブジェクト全体として保持する
+function LenInput({ mask, setMask }: LenInputProps) {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
   const [selectOption, setSelectOption] = useState<OptionType>(options[0]);
   const [query, setQuery] = useState<string>('');
 
-  // 修正 2: queryが空の時は全てのオプションを表示する
-  const filterOption = query === ''
-    ? options
-    : options.filter(op => op.label.toLowerCase().includes(query.toLowerCase()));
+  const filterOption =
+    query === ''
+      ? options.filter(op => op.value !== -1)
+      : options.filter(op => op.label.toLowerCase().includes(query.toLowerCase()));
 
-  // ... (findOption, useEffect は変更なし)
+  function findOption(len: number) {
+    return options.find(o => o.value === len) ?? options[0];
+  }
 
-  // 外部からの選択と内部の入力の連携
-  function handleSelect(newOption: OptionType | null) {
-    if (newOption === null) {
+  useEffect(() => {
+    if (mask === null) return;
+    setSelectOption(findOption(lenFromMask(mask) ?? -1));
+  }, [mask]);
+
+  function handleSelect(op: OptionType | null) {
+    if (op === null) {
       setSelectOption(options[0]);
       setMask(null);
       return;
     }
-    
-    // 選択されたオプション全体を保持
-    setSelectOption(newOption); 
-    
-    // 外部の setMask にも値を反映
-    setMask(maskFromLen(newOption.value));
+
+    setSelectOption(op);
+    setMask(maskFromLen(op.value));
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -132,79 +133,84 @@ function Leninput({ mask, setMask }: LenInputProps) {
       setMask(null);
       return;
     }
-    
-    // ここで直接 setMask を呼び出すロジックは残しつつ、
-    // queryの変更が選択肢のフィルタリングにも使われる
+
     const val = Number(inputVal);
     setMask(isNaN(val) ? null : maskFromLen(val));
   }
 
+  function handleKeyDown(e: React.KeyboardEvent<HTMLElement>) {
+    if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !open) {
+      e.preventDefault();
+      setIsOpen(true);
+    }
+  }
+
   return (
-    <Combobox
-      value={selectOption}
-      // 修正 1: onChangeで受け取るのはオブジェクト全体にする
-      onChange={handleSelect} 
-      onClose={() => setQuery('')}
-    >
-      <div className="flex relative"> {/* CSSの調整が必要ならここに追加 */}
-        <ComboboxInput
-          // displayValueはselectOptionオブジェクトからlabelを抽出
-          displayValue={(op: OptionType) => op?.label}
-          onChange={handleChange}
-          placeholder='24'
-          maxLength={2}
-          className="border border-gray-300 rounded-l p-2 w-full"
-        />
-        <ComboboxButton className="p-2 border border-gray-300 rounded-r bg-gray-50 hover:bg-gray-100">
-          <ChevronDownIcon className='size-4' />
-        </ComboboxButton>
-      </div>
-      <ComboboxOptions
-        anchor="bottom"
-        className="absolute z-10 w-full mt-1 bg-white shadow-lg rounded max-h-60 overflow-auto border border-gray-200"
-      >
-        {/* フィルタリングされたオプションの長さが0でなければ表示 */}
-        {filterOption.length > 0 ? (
-          filterOption.map(op =>
-            <ComboboxOption
-              key={op.value}
-              // 修正 1: valueにオブジェクト全体を設定
-              value={op} 
-              className='cursor-pointer p-2 data-focus:bg-blue-500 data-focus:text-white'
-            >
-              <div className="">{op.label}</div>
-            </ComboboxOption>
-          )
-        ) : (
-          <div className="relative cursor-default select-none py-2 px-4 text-gray-700">
-            一致するオプションはありません
-          </div>
-        )}
-      </ComboboxOptions>
+    <Combobox value={selectOption} onChange={handleSelect} onClose={() => setQuery('')}>
+      {({ open }) => {
+        // if (!open) setIsOpen(false);
+        console.log(open && isOpen);
+        return (
+          <>
+            <div className="combobox">
+              <SlashIcon className="size-6" />
+              <ComboboxInput
+                onKeyDown={handleKeyDown}
+                displayValue={(op: OptionType) => op?.label}
+                onChange={handleChange}
+                placeholder="24"
+                maxLength={2}
+                className="h-full w-6"
+              />
+              <ComboboxButton
+                className="h-full"
+                onClick={() => {
+                  setIsOpen(open => !open);
+                }}
+              >
+                <ChevronDownIcon className="size-6" />
+              </ComboboxButton>
+            </div>
+            <ComboboxOptions anchor="bottom" className="absolute h-[30vh]">
+              {filterOption.length > 0 ? (
+                filterOption.map(op => (
+                  <ComboboxOption
+                    key={op.value}
+                    value={op}
+                    className="group flex cursor-pointer items-center p-2 data-focus:bg-blue-500 data-focus:text-white"
+                  >
+                    <CheckIcon className="invisible size-4 group-data-selected:visible" />
+                    <div className="">{op.label}</div>
+                  </ComboboxOption>
+                ))
+              ) : (
+                <div className="relative cursor-default px-4 py-2 text-gray-700 select-none">
+                  一致するオプションはありません
+                </div>
+              )}
+            </ComboboxOptions>
+          </>
+        );
+      }}
     </Combobox>
   );
 }
 
-function MutualInputBox({
-  ipHook,
-}: {
-  ipHook: ReturnType<typeof useIpv4State>;
-}) {
+function MutualInputBox({ ipHook }: { ipHook: ReturnType<typeof useIpv4State> }) {
   return (
     <div className="mutual-box">
       <TextInput
-        className=""
+        className="border-input-border placeholder-input-placeholder h-input-h w-32 border border-r-0 px-3 py-0.5"
         label="IP Address"
         placeholder="192.168.0.1"
         ip={ipHook.ip}
         setIp={ipHook.setIp}
       >
-        <SlashIcon className='size-5' />
-        <Leninput mask={ipHook.mask} setMask={ipHook.setMask} />
+        <LenInput mask={ipHook.mask} setMask={ipHook.setMask} />
       </TextInput>
 
       <TextInput
-        className="input-mask"
+        className="border-input-border placeholder-input-placeholder h-input-h w-44 border px-2 py-0.5"
         label="Subnet Mask"
         ip={ipHook.mask}
         setIp={ipHook.setMask}
@@ -226,10 +232,8 @@ function MutualCommunication() {
     )
       return null;
     return (
-      (ipHooks[0].ip & ipHooks[1].mask) ===
-        networkFromIpMask(ipHooks[1].ip!, ipHooks[1].mask!) &&
-      (ipHooks[1].ip & ipHooks[0].mask) ===
-        networkFromIpMask(ipHooks[0].ip!, ipHooks[0].mask!)
+      (ipHooks[0].ip & ipHooks[1].mask) === networkFromIpMask(ipHooks[1].ip!, ipHooks[1].mask!) &&
+      (ipHooks[1].ip & ipHooks[0].mask) === networkFromIpMask(ipHooks[0].ip!, ipHooks[0].mask!)
     );
   }, [ipHooks[0].ip, ipHooks[1].ip, ipHooks[0].mask, ipHooks[1].mask]);
 
@@ -244,9 +248,7 @@ function MutualCommunication() {
         ))}
       </div>
       <div className="">
-        {canCommunicate !== null && (
-          <p>通信可能: {canCommunicate ? '✅ Yes' : '❌ No'}</p>
-        )}
+        {canCommunicate !== null && <p>通信可能: {canCommunicate ? '✅ Yes' : '❌ No'}</p>}
       </div>
     </div>
   );
@@ -254,7 +256,7 @@ function MutualCommunication() {
 
 export default function App() {
   return (
-    <div id="wrapper">
+    <div className="bg-bgclr text-txclr h-full w-full transition-colors duration-300">
       <MutualCommunication />
     </div>
   );

@@ -28,22 +28,6 @@ html {
   }
 }
 
-#wrapper {
-  @apply bg-bgclr text-txclr h-full w-full transition-colors duration-300;
-}
-
-.input-wrap {
-  @apply h-fit w-fit;
-}
-
-.input-wrap:has(.rs_content) {
-  @apply flex;
-}
-
-.input-ip {
-  @apply border-input-border placeholder-input-placeholder h-input-h w-32 border border-r-0 px-3 py-0.5;
-}
-
-.input-mask {
-  @apply border-input-border placeholder-input-placeholder h-input-h w-44 border px-2 py-0.5;
+.combobox {
+  @apply border-input-border relative flex items-center border border-l-0;
 }
