@@ -33,17 +33,21 @@ html {
 }
 
 .input-wrap {
-  @apply h-fit w-fit;
+  @apply border-input-border h-fit w-fit border-1;
 }
 
-.input-wrap:has(.rs_content) {
-  @apply flex;
+.input-wrap:has(.input-len) {
+  @apply relative flex items-center;
 }
 
 .input-ip {
-  @apply border-input-border placeholder-input-placeholder h-input-h w-32 border border-r-0 px-3 py-0.5;
+  @apply placeholder-input-placeholder h-input-h w-32 pl-2.5 py-0.5;
+}
+
+.input-len {
+  @apply w-4;
 }
 
 .input-mask {
-  @apply border-input-border placeholder-input-placeholder h-input-h w-44 border px-2 py-0.5;
+  @apply placeholder-input-placeholder h-input-h w-50 px-2.5 py-0.5;
 }
