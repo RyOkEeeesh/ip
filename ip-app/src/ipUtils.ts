@@ -21,6 +21,7 @@ export function intToIpv4(ip: number): string {
 
 export function maskFromLen(len: number): ipUtilsReturn {
   if (len < IP_MIN || IP_MAX < len) return null;
+  if (len === 0) return 0;
   return (0xffffffff << (IP_MAX - len)) >>> 0;
 }
 

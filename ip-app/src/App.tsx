@@ -167,11 +167,7 @@ function Leninput({ mask, setMask }: LenInputProps) {
   );
 }
 
-function MutualInputBox({
-  ipHook,
-}: {
-  ipHook: ReturnType<typeof useIpv4State>;
-}) {
+function MutualInputBox({ ipHook }: { ipHook: ReturnType<typeof useIpv4State> }) {
   return (
     <div className='mutual-box'>
       <TextInput
@@ -226,10 +222,8 @@ function MutualCommunication() {
           </div>
         ))}
       </div>
-      <div className=''>
-        {canCommunicate !== null && (
-          <p>通信可能: {canCommunicate ? '✅ Yes' : '❌ No'}</p>
-        )}
+      <div className="">
+        {canCommunicate !== null && <p>通信可能: {canCommunicate ? '✅ Yes' : '❌ No'}</p>}
       </div>
     </div>
   );
@@ -237,7 +231,7 @@ function MutualCommunication() {
 
 export default function App() {
   return (
-    <div id='wrapper'>
+    <div className="bg-bgclr text-txclr h-full w-full transition-colors duration-300">
       <MutualCommunication />
     </div>
   );
