@@ -41,7 +41,7 @@ html {
 }
 
 .input-ip {
-  @apply placeholder-input-placeholder h-input-h w-32 pl-2.5 py-0.5;
+  @apply placeholder-input-placeholder h-input-h w-32 py-0.5 pl-2.5 ;
 }
 
 .input-len {
@@ -50,4 +50,13 @@ html {
 
 .input-mask {
   @apply placeholder-input-placeholder h-input-h w-50 px-2.5 py-0.5;
+}
+
+.hidden-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  @apply h-[30vh] absolute top-0 right-0 overflow-y-scroll;
+}
+.hidden-scrollbar::-webkit-scrollbar {
+  display: none;
 }

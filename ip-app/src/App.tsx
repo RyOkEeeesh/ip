@@ -8,7 +8,7 @@ import {
   maskFromLen,
   networkFromIpMask,
 } from './ipUtils';
-import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/react';
+import { Input, Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/react';
 import { CheckIcon, ChevronDownIcon, SlashIcon } from '@heroicons/react/20/solid';
 
 type IntIPv4 = number | null;
@@ -65,7 +65,7 @@ function TextInput({
         {label}
       </label>
       <div className='input-wrap'>
-        <input
+        <Input
           type='text'
           className={className}
           id={generatedId}
@@ -105,8 +105,9 @@ function Leninput({ mask, setMask }: LenInputProps) {
   }
 
   useEffect(() => {
-    if (mask === null) return;
-    setSelect(findOption(lenFromMask(mask) ?? -1));
+    const select = findOption(lenFromMask(mask ?? -1) ?? -1)
+    setQuery(select.label)
+    setSelect(select);
   }, [mask]);
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -135,7 +136,7 @@ function Leninput({ mask, setMask }: LenInputProps) {
 
   return (
     <>
-      <input
+      <Input
         type='text'
         className='input-len'
         value={query}
@@ -150,7 +151,7 @@ function Leninput({ mask, setMask }: LenInputProps) {
         <ListboxButton>
           <ChevronDownIcon className='size-6' />
         </ListboxButton>
-        <ListboxOptions className='absolute h-[30vh] overflow-y-scroll top-0 right-0'>
+        <ListboxOptions className='hidden-scrollbar'>
           {options.filter(op => op.value !== -1).map(op =>
             <ListboxOption
               className='group flex cursor-default items-center gap-2 rounded-lg px-3 py-1.5 select-none data-focus:bg-white/10'
