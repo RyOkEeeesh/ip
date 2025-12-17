@@ -3,7 +3,7 @@ name: Deploy Vite to GitHub Pages
 on:
   push:
     branches:
-      - mworkflow_dispatchain
+      - workflow_dispatch
 
 jobs:
   build-and-deploy:
