@@ -4,18 +4,26 @@ import {
   IP_MAX,
   ipv4ToInt,
   isIpv4,
+  isMask,
   lenFromMask,
   maskFromLen,
   networkFromIpMask,
 } from './ipUtils';
 import { Input, Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/react';
 import { CheckIcon, ChevronDownIcon, SlashIcon } from '@heroicons/react/20/solid';
+import clsx from 'clsx';
 
 type IntIPv4 = number | null;
 
 function useIpv4State() {
-  const [ip, setIp] = useState<IntIPv4>(null);
-  const [mask, setMask] = useState<IntIPv4>(null);
+  const [ip, setI] = useState<IntIPv4>(null);
+  const [mask, setM] = useState<IntIPv4>(null);
+  function setIp(i: IntIPv4) {
+    if (ip !== i) setI(i);
+  }
+  function setMask(m: IntIPv4) {
+    if (mask !== m) setM(m !== null && isMask(m) ? m : null);
+  }
   return { ip, mask, setIp, setMask };
 }
 
@@ -23,7 +31,7 @@ type TextInputProps = {
   label: string;
   placeholder?: string;
   ip: IntIPv4;
-  setIp: React.Dispatch<React.SetStateAction<IntIPv4>>;
+  setIp: (v: IntIPv4) => void;
   children?: React.ReactNode;
   className?: string;
 };
@@ -42,10 +50,8 @@ function TextInput({
   useEffect(() => {
     if (ip === null) {
       if (!isInternalRef.current) setValue('');
-      return;
     } else {
-      const formatted = intToIpv4(ip);
-      if (formatted !== value) setValue(formatted);
+      setValue(intToIpv4(ip));
     }
     isInternalRef.current = false;
   }, [ip]);
@@ -67,7 +73,8 @@ function TextInput({
       <div className='input-wrap'>
         <Input
           type='text'
-          className={className}
+          autoComplete='off'
+          className={clsx(className, 'outline-none bg-transparent', ip !== null ? 'focus:focus:shadow-[inset_0_-2px_0_0_#a3e635]' : 'focus:shadow-[inset_0_-2px_0_0_#ef4444]')}
           id={generatedId}
           value={value}
           placeholder={placeholder}
@@ -93,7 +100,7 @@ options.unshift({ value: -1, label: '' });
 
 type LenInputProps = {
   mask: IntIPv4;
-  setMask: React.Dispatch<React.SetStateAction<IntIPv4>>;
+  setMask: (v: IntIPv4) => void;
 };
 
 function Leninput({ mask, setMask }: LenInputProps) {
@@ -138,7 +145,8 @@ function Leninput({ mask, setMask }: LenInputProps) {
     <>
       <Input
         type='text'
-        className='input-len'
+        autoComplete='off'
+        className={clsx('input-len', 'outline-none bg-transparent', mask !== null ? 'focus:focus:shadow-[inset_0_-2px_0_0_#a3e635]' : 'focus:shadow-[inset_0_-2px_0_0_#ef4444]')}
         value={query}
         placeholder='24'
         onChange={handleInputChange}
@@ -149,16 +157,16 @@ function Leninput({ mask, setMask }: LenInputProps) {
         onChange={handleSelect}
       >
         <ListboxButton>
-          <ChevronDownIcon className='size-6' />
+          <ChevronDownIcon className='size-5' />
         </ListboxButton>
-        <ListboxOptions className='hidden-scrollbar'>
+        <ListboxOptions className='options'>
           {options.filter(op => op.value !== -1).map(op =>
             <ListboxOption
               className='group flex cursor-default items-center gap-2 rounded-lg px-3 py-1.5 select-none data-focus:bg-white/10'
               key={op.value}
               value={op}
             >
-              <CheckIcon className="invisible size-4 group-data-selected:visible" />
+              <CheckIcon className='invisible size-4 group-data-selected:visible' />
               {op.label}
             </ListboxOption>
           )}
@@ -178,7 +186,7 @@ function MutualInputBox({ ipHook }: { ipHook: ReturnType<typeof useIpv4State> })
         ip={ipHook.ip}
         setIp={ipHook.setIp}
       >
-        <div className="h-full flex items-center gap-1 pr-1">
+        <div className='h-full flex items-center gap-1 pr-1'>
           <SlashIcon className='size-5' />
           <Leninput mask={ipHook.mask} setMask={ipHook.setMask} />
         </div>
@@ -215,7 +223,7 @@ function MutualCommunication() {
 
   return (
     <div className='flex h-full w-full flex-col items-center justify-center'>
-      <div className='flex gap-2'>
+      <div className='flex gap-4'>
         {ipHooks.map((ipHook, i) => (
           <div key={`box-${i}`}>
             <p className='text-center'>IP {i + 1}</p>
@@ -223,8 +231,8 @@ function MutualCommunication() {
           </div>
         ))}
       </div>
-      <div className="">
-        {canCommunicate !== null && <p>通信可能: {canCommunicate ? '✅ Yes' : '❌ No'}</p>}
+      <div className='h-4'>
+        {canCommunicate !== null && <p className={clsx(canCommunicate ? 'text-lime-400' : 'text-red-400')}>{canCommunicate ? '通信可能' : '通信不可能'}</p>}
       </div>
     </div>
   );
@@ -232,7 +240,7 @@ function MutualCommunication() {
 
 export default function App() {
   return (
-    <div className="bg-bgclr text-txclr h-full w-full transition-colors duration-300">
+    <div className='bg-bgclr text-txclr h-full w-full transition-colors duration-300'>
       <MutualCommunication />
     </div>
   );

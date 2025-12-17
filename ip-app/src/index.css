@@ -33,7 +33,7 @@ html {
 }
 
 .input-wrap {
-  @apply border-input-border h-fit w-fit border-1;
+  @apply border-input-border mb-2 h-fit w-fit border;
 }
 
 .input-wrap:has(.input-len) {
@@ -41,22 +41,22 @@ html {
 }
 
 .input-ip {
-  @apply placeholder-input-placeholder h-input-h w-32 py-0.5 pl-2.5 ;
+  @apply placeholder-input-placeholder h-input-h w-32 py-0.5 pl-2.5;
 }
 
 .input-len {
-  @apply w-4;
+  @apply h-input-h w-5;
 }
 
 .input-mask {
   @apply placeholder-input-placeholder h-input-h w-50 px-2.5 py-0.5;
 }
 
-.hidden-scrollbar {
+.options {
   -ms-overflow-style: none;
   scrollbar-width: none;
-  @apply h-[30vh] absolute top-0 right-0 overflow-y-scroll;
+  @apply bg-bgclr border-input-border absolute top-0 right-0 h-[30vh] overflow-y-scroll border outline-none;
 }
-.hidden-scrollbar::-webkit-scrollbar {
+.options::-webkit-scrollbar {
   display: none;
 }

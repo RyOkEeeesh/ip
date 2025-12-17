@@ -9,6 +9,12 @@ export function isIpv4(ip: string) {
   return regex.test(ip);
 }
 
+export function isMask(mask: number): boolean {
+  const inverted = ~mask >>> 0;
+  if ((inverted & (inverted + 1)) !== 0) return false;
+  return true;
+}
+
 export function ipv4ToInt(ip: string): number {
   return ip
     .split('.')
@@ -38,10 +44,7 @@ export function minMaskFromIpNetwork(
 
 export function lenFromMask(mask: number): ipUtilsReturn {
   if (mask === -1) return null;
-
-  const inverted = ~mask >>> 0;
-  if ((inverted & (inverted + 1)) !== 0) return null;
-
+  if (!isMask(mask)) return null;
   return Math.clz32(~mask);
 }
 
